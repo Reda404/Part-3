@@ -17,7 +17,7 @@ app.get('/api/persons', (req, res, next) => {
     .then((persons) => {
       res.json(persons)
     })
-    .catch((error) => next(error))
+    .catch((err) => next(err))
 })
 
 app.get('/api/persons/:id', (req, res, next) => {
@@ -31,7 +31,7 @@ app.get('/api/persons/:id', (req, res, next) => {
         res.status(404).end()
       }
     })
-    .catch((error) => next(error))
+    .catch((err) => next(err))
 })
 
 app.post('/api/persons', (req, res, next) => {
@@ -47,35 +47,37 @@ app.post('/api/persons', (req, res, next) => {
       res.status(201).json(result)
       mongoose.connection.close()
     })
-    .catch((error) => next(error))
+    .catch((err) => next(err))
 })
 
 app.delete('/api/persons/:id', (req, res, next) => {
   const id = req.params.id
 
   Person.findByIdAndRemove(id)
-    .then((result) => {
+    .then(() => {
       res.status(204).end()
     })
-    .catch((error) => next(error))
+    .catch((err) => next(err))
 })
 
-app.get('/info', (req, res) => {
-  res.send(`
+app.get('/info', (req, res, next) => {
+  Person.find({})
+    .then((persons) => {
+      res.send(`
     Phone book has info for ${persons.length} people <br><br> ${new Date()}
   `)
+    })
+    .catch((err) => next(err))
 })
 
-const errorHandler = (error, request, response, next) => {
-  console.error(error.message)
-
-  if (error.name === 'CastError') {
-    return response.status(400).send({ error: 'malformatted id' })
-  } else if (error.name === 'ValidationError') {
-    return response.status(400).json({ error: error.message })
+const errorHandler = (err, req, res, next) => {
+  console.error(err.message)
+  if (err.name === 'CastError') {
+    return res.status(400).send({ error: 'malformatted id' })
+  } else if (err.name === 'ValidationError') {
+    return res.status(400).json({ error: err.message })
   }
-
-  next(error)
+  next(err)
 }
 
 app.use(errorHandler)
